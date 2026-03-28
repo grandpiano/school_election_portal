@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Election Results - Official Tally{% endblock %}
+
+{% block content %}
+<style>
+    .winner-highlight { border-left: 5px solid #10B981 !important; background: linear-gradient(to right, #f0fff4, #ffffff); }
+    .bar-container { height: 250px; }
+    .refresh-badge { animation: pulse-opacity 2s infinite; }
+    @keyframes pulse-opacity { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    .cert-lock-icon { font-size: 1.5rem; vertical-align: middle; }
+    .card-udes { border-radius: 15px; transition: transform 0.2s; }
+    .card-udes:hover { transform: translateY(-5px); }
+</style>
+
+{% if user.is_superuser or user.groups.all.0.name == "Commissioner Head" %}
+    <div class="alert {% if config.results_certified %}alert-success{% else %}alert-warning{% endif %} d-flex justify-content-between align-items-center mb-4 shadow-sm border-0">
+        <div>
+            {% if config.results_certified %}
+                <i class="bi bi-patch-check-fill text-success cert-lock-icon me-2"></i>
+                <strong>Official:</strong> Results certified on {{ config.certified_at|date:"M d, Y H:i" }}.
+            {% else %}
+                <i class="bi bi-shield-exclamation text-warning cert-lock-icon me-2"></i>
+                <strong>Management:</strong> Polls are ongoing. Certification is available once time expires.
+            {% endif %}
+        </div>
+
+        <div>
+            {% if config.results_certified %}
+                <a href="{% url 'download_certified_report' %}" class="btn btn-dark btn-sm fw-bold px-3 rounded-pill">
+                    <i class="bi bi-file-pdf me-1"></i> Official Certificate
+                </a>
+            {% elif election_has_ended %}
+                <form action="{% url 'certify_results' %}" method="POST" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm fw-bold px-3 rounded-pill" 
+                            onclick="return confirm('WARNING: This will lock results permanently. Continue?')">
+                        <i class="bi bi-shield-lock me-1"></i> Certify & Close Election
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">Official Election Tally</h2>
+        <p class="text-muted mb-0">
+            {% if config.results_certified %}
+                <span class="text-primary fw-bold"><i class="bi bi-lock-fill"></i> FINALIZED DATA</span>
+            {% else %}
+                <span class="refresh-badge text-success">●</span> Live updates from secure ballot servers
+            {% endif %}
+        </p>
+    </div>
+    <div class="text-end">
+        <button class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="window.location.reload()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh Tally
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    {% for position in results %}
+    <div class="col-xl-6 mb-4">
+        <div class="card card-udes p-4 h-100 border-0 shadow-sm bg-white">
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+                <h5 class="fw-bold mb-0 text-dark">{{ position.title }}</h5>
+                <span class="badge bg-light text-primary border">{{ position.candidates|length }} Contestants</span>
+            </div>
+            
+            <div class="bar-container mb-4">
+                <canvas id="chart-{{ position.id }}"></canvas>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-borderless align-middle">
+                    <thead class="text-muted small text-uppercase">
+                        <tr>
+                            <th>Candidate</th>
+                            <th class="text-center">Progress</th>
+                            <th class="text-end">Votes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cand in position.candidates %}
+                        <tr class="{% if forloop.first and cand.votes > 0 %}winner-highlight{% endif %} border-bottom">
+                            <td style="width: 40%;">
+                                <div class="d-flex align-items-center">
+                                    {% if forloop.first and cand.votes > 0 %}
+                                        <i class="bi bi-trophy-fill text-warning me-2"></i>
+                                    {% endif %}
+                                    <span class="fw-bold">{{ cand.name }}</span>
+                                </div>
+                            </td>
+                            <td style="width: 40%;">
+                                <div class="progress" style="height: 8px; border-radius: 10px; background-color: #f0f0f0;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                         role="progressbar" 
+                                         style="width: {{ cand.percentage }}%; background-color: #3B7BFF;"></div>
+                                </div>
+                            </td>
+                            <td class="text-end" style="width: 20%;">
+                                <span class="fw-bold text-primary">{{ cand.votes }}</span>
+                                <small class="text-muted d-block" style="font-size: 0.7rem;">{{ cand.percentage|stringformat:".1f" }}%</small>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center text-muted">No candidates registered.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    
+    {% for position in results %}
+    new Chart(document.getElementById('chart-{{ position.id }}'), {
+        type: 'bar',
+        data: {
+            labels: [{% for cand in position.candidates %}"{{ cand.name }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Votes',
+                data: [{% for cand in position.candidates %}{{ cand.votes }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: '#3B7BFF',
+                borderRadius: 5
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true, grid: { display: false } } }
+        }
+    });
+    {% endfor %}
+</script>
+
+{% endblock %}

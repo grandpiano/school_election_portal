@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Official Election Certification{% endblock %}
+
+{% block content %}
+<style>
+    /* Professional Styling */
+    .cert-border { 
+        border: 10px double #0A1A3C; 
+        padding: 50px; 
+        background: white; 
+        position: relative; 
+        min-height: 800px; /* Ensures it fills the A4 height nicely */
+    }
+    .cert-header { border-bottom: 2px solid #0A1A3C; margin-bottom: 30px; }
+    .winner-row { border-bottom: 1px solid #eee; padding: 10px 0; }
+    .stamp { position: absolute; bottom: 150px; right: 80px; opacity: 0.1; transform: rotate(-15deg); }
+    
+    /* A4 Print Optimization */
+    @media print {
+        /* Hide EVERYTHING except the cert-border div */
+        body * { visibility: hidden; }
+        .no-print { display: none !important; }
+        .cert-border, .cert-border * { visibility: visible; }
+        
+        /* Position the certificate at the very top-left of the printed page */
+        .cert-border { 
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            border: 5px solid #000; /* Cleaner border for ink printing */
+            box-shadow: none !important;
+        }
+
+        /* Remove margins/headers/footers from the browser print settings */
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        
+        .container { max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="cert-border shadow-lg" id="printableCertificate">
+        <div class="text-center cert-header">
+            <h1 class="display-4 fw-bold" style="font-family: 'Times New Roman', serif;">CERTIFICATE OF ELECTION</h1>
+            <p class="lead text-uppercase fw-bold">{{ config.title }}</p>
+            <p>Conducted on {{ config.start_time|date:"F d, Y" }}</p>
+        </div>
+
+        <div class="py-4">
+            <p class="text-center mb-5 fs-5">
+                This is to officially certify that, upon the completion of a transparent and secure electronic ballot,
+                the following individuals have been duly elected by the student body to serve in their respective positions:
+            </p>
+
+            <div class="mx-5">
+                {% for pos in results %}
+                <div class="row winner-row align-items-center">
+                    <div class="col-6">
+                        <h5 class="fw-bold mb-0 text-uppercase">{{ pos.title }}</h5>
+                    </div>
+                    <div class="col-6 text-end">
+                        <h4 class="text-primary fw-bold mb-0">{{ pos.winner|default:"No Candidate" }}</h4>
+                        <small class="text-muted">{{ pos.max_votes }} Total Votes</small>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-center">No results available for certification.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="row mt-5 pt-5">
+            <div class="col-6 text-center">
+                <div style="border-top: 2px solid #000; width: 220px; margin: auto; padding-top: 10px;">
+                    <p class="mb-0 fw-bold">University Administration </p>
+                    <small class="text-muted">Office of Student Service</small>
+                </div>
+            </div>
+            <div class="col-6 text-center">
+                <div style="border-top: 2px solid #000; width: 220px; margin: auto; padding-top: 10px;">
+                    <p class="mb-0 fw-bold">Chief Election Commissioner</p>
+                    
+                    
+                </div>
+            </div>
+        </div>
+
+        <div class="stamp">
+            <i class="bi bi-patch-check-fill" style="font-size: 10rem; color: #0A1A3C;"></i>
+        </div>
+    </div>
+
+    <div class="text-center mt-4 no-print pb-5">
+        <button onclick="window.print()" class="btn btn-primary btn-lg px-5 rounded-pill shadow">
+            <i class="bi bi-printer me-2"></i> Print Official Certificate
+        </button>
+        <br>
+        <a href="{% url 'election_results' %}" class="btn btn-link mt-2 text-decoration-none text-muted">
+            <i class="bi bi-arrow-left"></i> Return to Results Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+http://127.0.0.1:8000/kiosk/
+
+http://127.0.0.1:8000/admin/
+
+
+
+
+Step A: Setup the Election (Admin Side)
+Go to http://127.0.0.1:8000/manage-candidates/.
+
+
+
+Step B: Register a Voter
+Go to http://127.0.0.1:8000/voter-registry/.
+
+
+
+Step C: The Kiosk (The Student Experience)
+Go to http://127.0.0.1:8000/kiosk/.
+
+
+
+Step D: Verify the Results
+Go to http://127.0.0.1:8000/results/.

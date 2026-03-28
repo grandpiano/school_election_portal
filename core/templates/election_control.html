@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Election Control Panel{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card card-udes border-0 shadow-sm">
+                <div class="card-header bg-dark text-white p-4">
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-gear-wide-connected me-2"></i> Election Control Center</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Election Title</label>
+                            <input type="text" name="title" class="form-control form-control-lg" value="{{ config.title }}">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Start Date & Time</label>
+                                <input type="datetime-local" name="start_time" class="form-control" 
+                                       value="{{ config.start_time|date:'Y-m-d\TH:i' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold text-muted small text-uppercase">End Date & Time</label>
+                                <input type="datetime-local" name="end_time" class="form-control" 
+                                       value="{{ config.end_time|date:'Y-m-d\TH:i' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info border-0 shadow-sm d-flex align-items-center">
+                            <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                            <div>
+                                <strong>System Status:</strong> The voting kiosks will automatically activate at the Start Time and lock at the End Time.
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary-udes py-3 shadow-sm">
+                                <i class="bi bi-cloud-check me-2"></i> Update Election Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Voter Access Terminal{% endblock %}
+
+{% block content %}
+<style>
+    /* Hide Navigation for Kiosk Security */
+    .sidebar, .navbar-udes { display: none !important; }
+    main { margin-left: 0 !important; width: 100% !important; background-color: #F3F4F6; min-height: 100vh; }
+    
+    .kiosk-wrapper {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding-top: 5vh;
+    }
+
+    .kiosk-card {
+        background: white;
+        padding: 40px;
+        border-radius: 24px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        max-width: 450px;
+        width: 100%;
+    }
+
+    .token-input-field {
+        font-size: 3.5rem;
+        letter-spacing: 0.8rem;
+        text-align: center;
+        font-weight: 800;
+        border: 2px solid #E5E7EB;
+        border-radius: 16px;
+        color: #0A1A3C;
+        background: #F9FAFB;
+        padding: 15px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .numpad-btn {
+        height: 85px;
+        font-size: 1.8rem;
+        font-weight: 700;
+        border-radius: 18px;
+        background: white;
+        border: 2px solid #F3F4F6;
+        color: #1F2937;
+        transition: all 0.1s ease;
+        box-shadow: 0 4px 0 #E5E7EB;
+    }
+
+    .numpad-btn:active {
+        transform: translateY(4px);
+        box-shadow: 0 0 0 #E5E7EB;
+        background: #F9FAFB;
+    }
+
+    .btn-go {
+        background: #10B981 !important;
+        color: white !important;
+        box-shadow: 0 4px 0 #059669;
+    }
+    
+    .btn-clear {
+        background: #FEE2E2 !important;
+        color: #EF4444 !important;
+        box-shadow: 0 4px 0 #FECACA;
+    }
+
+    .status-indicator {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #9CA3AF;
+        margin-bottom: 20px;
+    }
+
+    /* Prevent text selection and right-click menus */
+body {
+    user-select: none; 
+    -webkit-user-select: none;
+    touch-action: manipulation; /* Prevents zooming on double-tap on tablets */
+}
+</style>
+
+<div class="kiosk-wrapper">
+    <div class="text-center mb-4">
+        <h1 class="fw-bold text-dark mb-1">AUWA Elect <span class="text-primary"></span></h1>
+        <div class="status-indicator">
+            <span class="pulse-dot"></span> Secure Voting Terminal
+        </div>
+    </div>
+
+    <div class="kiosk-card">
+        <div class="text-center mb-4">
+            <h4 class="fw-bold">Identity Verification</h4>
+            <p class="text-muted small">Please enter the 6-digit access token provided by the election officer.</p>
+        </div>
+
+        <input type="text" id="tokenDisplay" class="form-control token-input-field mb-4" readonly placeholder="••••••">
+
+        <div class="row g-3">
+            {% for i in "123456789"|make_list %}
+                <div class="col-4">
+                    <button class="btn numpad-btn w-100" onclick="press('{{ i }}')">{{ i }}</button>
+                </div>
+            {% endfor %}
+            <div class="col-4">
+                <button class="btn numpad-btn btn-clear w-100" onclick="clearToken()">
+                    <i class="bi bi-backspace"></i>
+                </button>
+            </div>
+            <div class="col-4">
+                <button class="btn numpad-btn w-100" onclick="press('0')">0</button>
+            </div>
+            <div class="col-4">
+                <button id="goBtn" class="btn numpad-btn btn-go w-100" onclick="validateToken()">
+                    <span id="goText">GO</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-5 text-center text-muted small">
+        <i class="bi bi-lock-fill me-1"></i> End-to-End Encrypted Session
+    </div>
+</div>
+
+<script>
+    let currentToken = "";
+    const display = document.getElementById('tokenDisplay');
+    const goBtn = document.getElementById('goBtn');
+
+    function press(num) {
+        if (currentToken.length < 6) {
+            currentToken += num;
+            // Update display with masked characters for privacy
+            display.value = currentToken.replace(/./g, '•'); 
+            
+            if(currentToken.length === 6) {
+                goBtn.classList.add('animate__animated', 'animate__pulse');
+            }
+        }
+    }
+
+    function clearToken() {
+        currentToken = "";
+        display.value = "";
+        goBtn.classList.remove('animate__pulse');
+    }
+
+    async function validateToken() {
+    if (currentToken.length < 6) return;
+
+    goBtn.disabled = true;
+    document.getElementById('goText').innerHTML = `<span class="spinner-border spinner-border-sm"></span>`;
+
+    try {
+       
+        const response = await fetch("{% url 'validate_token' %}", { 
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'X-CSRFToken': '{{ csrf_token }}' 
+            },
+            body: JSON.stringify({ token: currentToken })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            sessionStorage.setItem('active_token', currentToken);
+            window.location.href = "{% url 'ballot_view' %}";
+        } else {
+            // This is the important change: Show the actual error from the view
+            alert("VOTING ERROR: " + (data.error || "Invalid Token"));
+            clearToken();
+        }
+    } catch (error) {
+        console.error("Kiosk Fetch Error:", error);
+        alert("NETWORK ERROR: Check if the server is running at 127.0.0.1:8000");
+    } finally {
+        goBtn.disabled = false;
+        document.getElementById('goText').innerText = "GO";
+    }
+}
+</script>
+{% endblock %}

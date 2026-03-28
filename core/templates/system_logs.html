@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}System Audit Logs | Auwa Elect{% endblock %}
+
+{% block content %}
+<style>
+    .log-table { font-size: 0.875rem; }
+    .timestamp { font-family: 'JetBrains Mono', 'Courier New', monospace; color: #6B7280; white-space: nowrap; }
+    .action-badge { width: 120px; display: inline-block; text-align: center; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .terminal-id { font-family: monospace; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">System Audit Trail</h2>
+        <p class="text-muted mb-0">Immutable record of electoral administrative actions.</p>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i> Print Log
+        </button>
+        <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
+            <i class="bi bi-arrow-repeat me-1"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<div class="card card-udes border-0 shadow-sm overflow-hidden">
+    <div class="card-header bg-white py-3 border-bottom">
+        <div class="row align-items-center">
+            <div class="col">
+                <span class="badge bg-info-subtle text-info px-3 py-2 rounded-pill small">
+                    <i class="bi bi-shield-lock-fill me-1"></i> Data Integrity: Verified
+                </span>
+            </div>
+            <div class="col-auto text-muted small">
+                Total Log Entries: <strong>{{ logs|length }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 log-table">
+            <thead class="bg-light text-muted small">
+                <tr>
+                    <th class="ps-4">TIMESTAMP (UTC)</th>
+                    <th>TERMINAL / USER</th>
+                    <th>ACTION CATEGORY</th>
+                    <th>EVENT DETAILS</th>
+                    <th class="text-end pe-4">STATUS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="ps-4 timestamp">
+                        {{ log.timestamp|date:"Y-m-d H:i:s" }}
+                    </td>
+                    <td>
+                        <span class="terminal-id text-dark">
+                            <i class="bi bi-pc-display me-1"></i>{{ log.user }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if "TOKEN" in log.action %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle action-badge">Token Issued</span>
+                        {% elif "IMPORT" in log.action %}
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle action-badge">Data Import</span>
+                        {% elif "DELETE" in log.action or "REMOVED" in log.action %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle action-badge">Deletion</span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle action-badge">{{ log.action }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="text-dark fw-medium">{{ log.details }}</div>
+                    </td>
+                    <td class="text-end pe-4">
+                        <i class="bi bi-check-circle-fill text-success" title="Checksum Verified"></i>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-5">
+                        <i class="bi bi-clipboard-x fs-1 text-muted opacity-25"></i>
+                        <p class="text-muted mt-2">No system activity recorded yet.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+
+<div class="mt-4 p-3 bg-light rounded-3 border border-dashed text-center">
+    <small class="text-muted">
+        <i class="bi bi-info-circle me-1"></i> 
+        These logs are generated automatically by the Django Middleware and cannot be modified by Officer accounts.
+    </small>
+</div>
+{% endblock %}

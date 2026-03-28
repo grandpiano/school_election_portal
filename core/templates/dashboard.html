@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Voter Verification & Token Issuance{% endblock %}
+
+{% block content %}
+<style>
+    .search-card { background: linear-gradient(to right, #ffffff, #f8f9ff); border-left: 5px solid #3B7BFF; }
+    .pulse-dot { height: 10px; width: 10px; background-color: #10B981; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+    .token-display { letter-spacing: 8px; font-family: 'Courier New', monospace; background: #f0f4ff; border-radius: 12px; padding: 15px; }
+    
+    /* Print Styling */
+    @media print {
+        body * { visibility: hidden; }
+        #printableArea, #printableArea * { visibility: visible; }
+        #printableArea { position: absolute; left: 0; top: 0; width: 100%; text-align: center; }
+    }
+</style>
+
+<div class="card card-udes p-4 mb-4 border-0 shadow-sm">
+    <div class="row align-items-center">
+        <div class="col-md-3 text-center text-md-start">
+            <h6 class="text-uppercase text-muted fw-bold small mb-1">Live Turnout</h6>
+            <div class="d-flex align-items-center justify-content-center justify-content-md-start">
+                <span class="pulse-dot me-2"></span>
+                <h3 class="fw-bold mb-0 text-dark">{{ turnout_pct }}%</h3>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="progress mb-2" style="height: 12px; border-radius: 10px; background-color: #e9ecef;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                     role="progressbar" style="width: {{ turnout_pct }}%; background-color: #3B7BFF;"></div>
+            </div>
+            <div class="d-flex justify-content-between small text-muted">
+                <span><strong>{{ voted_count }}</strong> Ballots Cast</span>
+                <span><strong>{{ total_registered }}</strong> Total Voters</span>
+            </div>
+        </div>
+        <div class="col-md-3 text-center text-md-end border-start d-none d-md-block">
+            <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">Election Live</span>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card card-udes p-4 mb-4 search-card shadow-sm">
+            <div class="d-flex align-items-center mb-4">
+                <div class="bg-primary text-white p-2 rounded-3 me-3"><i class="bi bi-search"></i></div>
+                <h5 class="fw-bold mb-0">Voter Search & Verification</h5>
+            </div>
+            
+            <form method="GET" action="" class="mb-4">
+                <div class="input-group input-group-lg shadow-sm rounded">
+                    <input type="text" name="q" class="form-control border-0 bg-light" 
+                           placeholder="Search Student ID or Name..." value="{{ query|default:'' }}">
+                    <button class="btn btn-primary px-4" type="submit">Find Voter</button>
+                </div>
+            </form>
+
+            {% if voters %}
+            <div class="table-responsive">
+                <table class="table table-hover border-top">
+                    <thead class="text-muted small">
+                        <tr>
+                            <th>STUDENT ID</th>
+                            <th>FULL NAME</th>
+                            <th class="text-center">STATUS</th>
+                            <th class="text-end">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody class="align-middle">
+                        {% for voter in voters %}
+                        <tr>
+                            <td><span class="badge bg-light text-dark border p-2">{{ voter.student_id }}</span></td>
+                            <td class="fw-bold">{{ voter.name }}</td>
+                            <td class="text-center">
+                                {% if voter.has_voted %}
+                                    <span class="badge bg-secondary-subtle text-secondary border">Voted</span>
+                                {% else %}
+                                    <span class="badge bg-success-subtle text-success border">Ready</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if not voter.has_voted %}
+                                    <button id="btn-{{ voter.id }}" class="btn btn-sm btn-primary rounded-pill px-3" 
+                                            onclick="handleTokenGeneration('{{ voter.id }}')">
+                                        Issue Token
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>Completed</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="tokenModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-body p-5 text-center" id="printableArea">
+                <div class="mb-3 text-success no-print">
+                    <i class="bi bi-check-circle-fill display-4"></i>
+                </div>
+                <h3 class="fw-bold mb-1">Access Granted</h3>
+                <p class="text-muted mb-4">Verification successful for <br><strong id="modal-voter-name" class="text-dark"></strong></p>
+                
+                <div class="token-display mb-4">
+                    <div class="display-3 fw-bold text-primary" id="generated-token-display">000000</div>
+                    <small class="text-uppercase fw-bold text-muted">Voter Access Token</small>
+                </div>
+                
+                <div class="alert alert-warning py-2 mb-4 border-0 no-print">
+                    <i class="bi bi-clock me-2"></i> Expires in 5 minutes
+                </div>
+
+                <div class="d-grid gap-2 no-print">
+                    <button type="button" class="btn btn-success btn-lg rounded-pill shadow" onclick="window.print()">
+                        <i class="bi bi-printer me-2"></i> Print Token Slip
+                    </button>
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal" onclick="location.reload()">
+                        Done
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function handleTokenGeneration(voterId) {
+    const btn = document.getElementById(`btn-${voterId}`);
+    const originalText = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    fetch("{% url 'generate_token' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({ voter_id: voterId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.token) {
+            document.getElementById('modal-voter-name').innerText = data.student_name;
+            document.getElementById('generated-token-display').innerText = data.token;
+            
+            const tokenModal = new bootstrap.Modal(document.getElementById('tokenModal'));
+            tokenModal.show();
+            
+            btn.className = "btn btn-sm btn-success rounded-pill px-3 disabled";
+            btn.innerHTML = "Issued";
+        } else {
+            alert("Error: " + (data.error || "System could not generate token."));
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Network error.");
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    });
+}
+</script>
+
+<style type="text/css">
+    @media print {
+        .no-print { display: none !important; }
+        .modal-content { border: none !important; box-shadow: none !important; }
+        .modal-body { padding: 0 !important; margin: 0 !important; }
+    }
+</style>
+{% endblock %}

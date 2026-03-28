@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        /* 1. Page & Border Control */
+        @page { 
+            size: A4; 
+            margin: 1.5cm; /* Balanced margin for professional look */
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            color: #1a202c; 
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        /* 2. Header Branding */
+        .header { 
+            text-align: center; 
+            border-bottom: 3px solid #0A1A3C; 
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .title { 
+            font-size: 26px; 
+            font-weight: bold; 
+            color: #0A1A3C; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #4a5568;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        /* 3. Table Density & Cleanliness */
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 10px;
+            table-layout: auto;
+        }
+        
+        th { 
+            background-color: #f8fafc; 
+            color: #0A1A3C;
+            text-align: left; 
+            padding: 10px 12px; 
+            border: 1px solid #cbd5e1; 
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+        
+        td { 
+            padding: 10px 12px; 
+            border: 1px solid #cbd5e1; 
+            font-size: 12px; 
+        }
+
+        /* Alternate row colors for better eye tracking */
+        tbody tr:nth-child(even) {
+            background-color: #fdfdfd;
+        }
+
+        .status-badge {
+            font-weight: bold;
+            color: #059669; /* Success Green */
+            font-size: 11px;
+        }
+
+        /* 4. Footer & Printing Logic */
+        .footer { 
+            position: fixed; 
+            bottom: 0; 
+            width: 100%;
+            font-size: 10px; 
+            text-align: center; 
+            color: #718096;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 10px;
+        }
+
+        @media print {
+            thead { display: table-header-group; } /* Repeat headers on every page */
+            tr { page-break-inside: avoid; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">AUWA ELECT 2026</div>
+        <div class="subtitle">OFFICIAL CANDIDATE DOSSIER & VERIFICATION REGISTRY</div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 30%;">Candidate Name</th>
+                <th style="width: 25%;">Position</th>
+                <th style="width: 25%;">Department</th>
+                <th style="width: 20%;">Verification Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in candidates %}
+            <tr>
+                <td style="font-weight: 600;">{{ c.name }}</td>
+                <td>{{ c.position.title }}</td>
+                <td>{{ c.department|default:"University Wide" }}</td>
+                <td class="status-badge">✓ VERIFIED</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 20px;">No candidates currently registered.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        Generated on {{ report_date|default:now }} by UDES System Administrator | Page <span class="pageNumber"></span>
+    </div>
+</body>
+</html>

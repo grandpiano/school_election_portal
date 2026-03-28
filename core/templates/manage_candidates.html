@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Election Configuration{% endblock %}
+
+{% block content %}
+<style>
+    .position-group { border-left: 4px solid #3B7BFF; padding-left: 1rem; margin-bottom: 2rem; }
+    .candidate-card { transition: transform 0.2s, box-shadow 0.2s; border: 1px solid #edf2f7; }
+    .candidate-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+    .form-label-sm { font-size: 0.75rem; text-uppercase: uppercase; letter-spacing: 0.5px; color: #6b7280; }
+    .photo-preview-circle { border: 2px dashed #cbd5e0; padding: 3px; display: inline-block; border-radius: 50%; }
+</style>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card card-udes p-4 border-0 shadow-sm mb-4">
+            <div class="d-flex align-items-center mb-3">
+                <div class="bg-primary-subtle text-primary p-2 rounded-3 me-2">
+                    <i class="bi bi-award"></i>
+                </div>
+                <h6 class="fw-bold mb-0">1. Define Position</h6>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_position">
+                <div class="input-group">
+                    <input type="text" name="title" class="form-control border-light bg-light" placeholder="e.g. President" required>
+                    <button class="btn btn-primary" type="submit">Add</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card card-udes p-4 border-0 shadow-sm">
+            <div class="d-flex align-items-center mb-3">
+                <div class="bg-success-subtle text-success p-2 rounded-3 me-2">
+                    <i class="bi bi-person-plus"></i>
+                </div>
+                <h6 class="fw-bold mb-0">2. Add Contestant</h6>
+            </div>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_candidate">
+                
+                <div class="mb-3">
+                    <label class="form-label-sm fw-bold">Full Name</label>
+                    <input type="text" name="name" class="form-control bg-light border-0" placeholder="Student's Legal Name" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label-sm fw-bold">Election Office</label>
+                    <select name="position_id" class="form-select bg-light border-0" required>
+                        <option value="">Choose Position...</option>
+                        {% for pos in positions %}
+                        <option value="{{ pos.id }}">{{ pos.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label-sm fw-bold">Profile Portrait</label>
+                    <input type="file" name="photo" class="form-control form-control-sm border-dashed" accept="image/*" required>
+                    <div class="form-text small">Max size 2MB. Use square aspect ratio if possible.</div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
+                    Finalize Registration
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card card-udes p-4 border-0 shadow-sm min-vh-100">
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                <h5 class="fw-bold mb-0 text-dark">Electoral Lineup</h5>
+                <span class="badge bg-light text-dark border">{{ positions.count }} Active Positions</span>
+            </div>
+            
+            {% for pos in positions %}
+            <div class="position-group">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="text-primary fw-bold text-uppercase mb-0 ls-1">{{ pos.title }}</h6>
+                    <span class="badge rounded-pill bg-primary-subtle text-primary small">{{ pos.candidates.count }} Candidate(s)</span>
+                </div>
+                
+                <div class="row row-cols-1 row-cols-md-3 g-3">
+                    {% for candidate in pos.candidates.all %}
+                    <div class="col">
+                        <div class="card h-100 candidate-card border-0 shadow-sm text-center p-3">
+                            <div class="photo-preview-circle mb-3 mx-auto">
+                                {% if candidate.photo %}
+                                <img src="{{ candidate.photo.url }}" class="rounded-circle" style="width: 70px; height: 70px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                                    <i class="bi bi-person-fill fs-2"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <h6 class="fw-bold mb-1 small">{{ candidate.name }}</h6>
+                            <p class="text-muted mb-0" style="font-size: 0.7rem;">Verified Contestant</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <div class="p-4 rounded-3 border border-dashed text-center">
+                            <i class="bi bi-person-exclamation text-muted fs-3 mb-2 d-block"></i>
+                            <p class="text-muted small mb-0">No candidates registered for this position.</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-5">
+                <i class="bi bi-folder-plus display-1 text-light"></i>
+                <h5 class="text-muted mt-3">No positions created yet.</h5>
+                <p class="small text-muted">Use the sidebar to start setting up your election.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

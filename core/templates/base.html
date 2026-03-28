@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}UDES{% endblock %} | University Digital Election System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --udes-dark: #0A1A3C; --udes-blue: #3B7BFF; }
+        body { font-family: 'Inter', sans-serif; background-color: #F3F4F6; color: #1F2937; }
+        
+        /* Sidebar Styling */
+        .sidebar { background-color: var(--udes-dark); min-height: 100vh; color: #BFD8FF; z-index: 1000; }
+        .sidebar .nav-link { 
+            color: #BFD8FF; 
+            border-radius: 8px; 
+            margin-bottom: 5px; 
+            padding: 10px 15px;
+            transition: 0.2s; 
+            display: flex;
+            align-items: center;
+        }
+        .sidebar .nav-link i { margin-right: 12px; font-size: 1.1rem; }
+        .sidebar .nav-link:hover { background-color: rgba(255, 255, 255, 0.05); color: white; }
+        .sidebar .nav-link.active { background-color: var(--udes-blue); color: white; font-weight: 600; box-shadow: 0 4px 12px rgba(59, 123, 255, 0.3); }
+        
+        /* Badge for Election Status */
+        .status-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 50px; font-weight: 700; }
+
+        /* Main Content Area */
+        main { background-color: #F3F4F6; min-height: 100vh; }
+        .card-udes { border: none; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); background: white; }
+        .btn-primary-udes { background-color: var(--udes-blue); border: none; font-weight: 600; transition: 0.3s; }
+        .btn-primary-udes:hover { background-color: #2563EB; transform: translateY(-1px); }
+        
+        .messages-container { position: fixed; top: 20px; right: 20px; z-index: 2000; min-width: 300px; }
+        
+        .animate-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        /* Role Badge Styling in User Profile */
+        .role-indicator {
+            background-color: rgba(59, 123, 255, 0.2);
+            color: #3B7BFF;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        
+        {% if user.is_authenticated %}
+        <nav class="col-md-2 d-none d-md-block sidebar p-3 position-fixed">
+            <div class="d-flex align-items-center mb-4 mt-2 px-2">
+                <div class="bg-primary rounded-3 p-2 me-2">
+                    <i class="bi bi-shield-check text-white"></i>
+                </div>
+                <h5 class="text-white mb-0 fw-bold">AUWA Elect <span class="text-primary">V1.0</span></h5>
+            </div>
+
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'officer_dashboard' %}active{% endif %}" href="{% url 'officer_dashboard' %}">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+
+                {% if user.is_superuser or user.groups.all.0.name == "Commissioner Head" %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'election_control_panel' %}active{% endif %}" href="{% url 'election_control_panel' %}">
+                        <i class="bi bi-gear-wide-connected"></i> Control Panel
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if user.is_superuser or user.groups.all.0.name == "Commissioner Head" or user.groups.all.0.name == "Admin Registrar" %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'voter_registry' %}active{% endif %}" href="{% url 'voter_registry' %}">
+                        <i class="bi bi-people"></i> Voter Registry
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if user.is_superuser or user.groups.all.0.name == "Commissioner Head" %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'manage_candidates' %}active{% endif %}" href="{% url 'manage_candidates' %}">
+                        <i class="bi bi-person-badge"></i> Candidates
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if user.is_superuser or user.groups.all.0.name == "Commissioner Head" or user.groups.all.0.name == "Observer" or user.groups.all.0.name == "Student Director" %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'election_results' %}active{% endif %}" href="{% url 'election_results' %}">
+                        <i class="bi bi-graph-up"></i> Live Results
+                    </a>
+                </li>
+                {% endif %}
+                
+                <hr class="text-white-50 my-3">
+                
+                {% if user.is_superuser or user.groups.all.0.name == "Commissioner Head" or user.groups.all.0.name == "Student Director" %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'report_center' %}active{% endif %}" href="{% url 'report_center' %}">
+                        <i class="bi bi-file-earmark-bar-graph"></i> Report Center
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'system_logs' %}active{% endif %}" href="{% url 'system_logs' %}">
+                        <i class="bi bi-journal-text"></i> System Logs
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if user.is_superuser %}
+                <li class="nav-item mt-3">
+                    <div class="px-3 mb-2 small text-uppercase text-white-50 fw-bold" style="font-size: 0.65rem;">Developer Launchpad</div>
+                    <a class="nav-link bg-success text-white py-2 shadow-sm mb-2" 
+                       href="{% url 'kiosk_entry' %}" target="_blank">
+                        <i class="bi bi-play-circle-fill"></i> Launch Kiosk
+                    </a>
+                    <a class="nav-link bg-secondary text-white py-2 shadow-sm" 
+                       href="/admin" target="_blank">
+                        <i class="bi bi-gear-fill"></i> Backend Admin
+                    </a>
+                </li>
+                {% endif %}
+
+                <li class="nav-item mt-auto">
+                    <form action="{% url 'logout' %}" method="post" class="d-inline w-100">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-link border-0 bg-transparent w-100 text-start text-danger mt-4">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </button>
+                    </form>
+                </li>
+            </ul>
+
+            <div class="position-absolute bottom-0 start-0 w-100 p-3">
+                <div class="d-flex align-items-center p-2 rounded-3 bg-white bg-opacity-5 border border-white border-opacity-10 shadow-sm">
+                    <div class="flex-grow-1 overflow-hidden me-2">
+                        <p class="text-white small mb-0 fw-bold text-truncate">{{ user.username }}</p>
+                        
+                        <span class="role-indicator fw-bold text-uppercase">
+                            {% if user.is_superuser %}
+                                <i class="bi bi-code-square me-1"></i> ADMIN
+                            {% else %}
+                                <i class="bi bi-person-lock me-1"></i> {{ user.groups.all.0.name|default:"OFFICER" }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="text-success">
+                        <i class="bi bi-circle-fill animate-pulse" style="font-size: 0.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="col-md-2 d-none d-md-block"></div>
+        {% endif %}
+
+        <main class="{% if user.is_authenticated %}col-md-10{% else %}col-12{% endif %} ms-sm-auto px-md-4">
+            
+            {% if user.is_authenticated %}
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-4 pb-2 mb-3 border-bottom">
+                <div>
+                    <h1 class="h3 fw-bold mb-0">{% block title_display %}{{ block.super }}{% endblock %}</h1>
+                    <div id="election-timer" class="mt-1">
+                        <span class="status-badge shadow-sm" id="timer-label">Checking Status...</span>
+                    </div>
+                </div>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="d-flex align-items-center text-success small fw-bold">
+                        <span class="p-1 bg-success rounded-circle me-2 animate-pulse"></span>
+                        SECURE SESSION
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="messages-container">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-lg border-0" role="alert">
+                            <i class="bi bi-info-circle me-2"></i> {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="pb-5">
+                {% block content %}
+                {% endblock %}
+            </div>
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    function updateElectionUI() {
+        const badge = document.getElementById('timer-label');
+        if(!badge) return;
+
+        // Note: In the future, we can pull this dynamically from your ElectionConfig model
+        const isActive = true; 
+
+        if(isActive) {
+            badge.className = 'status-badge bg-success text-white shadow-sm';
+            badge.innerHTML = '<i class="bi bi-unlock-fill me-1"></i> ELECTION ACTIVE';
+        } else {
+            badge.className = 'status-badge bg-danger text-white shadow-sm';
+            badge.innerHTML = '<i class="bi bi-lock-fill me-1"></i> ELECTION CLOSED';
+        }
+    }
+    updateElectionUI();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Report Center{% endblock %}
+{% block title_display %}Election Report Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row g-4">
+        
+        <div class="col-md-4">
+            <div class="card card-udes h-100 p-4 border-0 shadow-sm">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary bg-opacity-10 p-3 rounded-3 me-3 text-primary">
+                        <i class="bi bi-people-fill fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold mb-0">Voter Registry</h5>
+                </div>
+                <p class="text-muted small">Download a full list of registered voters organized by department for verification.</p>
+                <div class="mt-auto">
+                    <button type="button" class="btn btn-primary-udes w-100 text-white" data-bs-toggle="modal" data-bs-target="#voterFilterModal">
+                        <i class="bi bi-eye me-2"></i>View & Print
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card card-udes h-100 p-4 border-0 shadow-sm">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-info bg-opacity-10 p-3 rounded-3 me-3 text-info">
+                        <i class="bi bi-person-badge-fill fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold mb-0">Candidate Dossier</h5>
+                </div>
+                <p class="text-muted small">Generate a formal PDF report of all candidates, their running positions, and verification status.</p>
+                <div class="mt-auto">
+                    <a href="{% url 'export_candidate_dossier' %}" class="btn btn-info w-100 text-white">
+                        <i class="bi bi-file-pdf me-2"></i>Generate PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card card-udes h-100 p-4 border-0 shadow-sm">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-warning bg-opacity-10 p-3 rounded-3 me-3 text-warning">
+                        <i class="bi bi-pie-chart-fill fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold mb-0">Turnout Analytics</h5>
+                </div>
+                <p class="text-muted small">Real-time stats on which departments are voting the most vs. least. Great for monitoring engagement.</p>
+                <div class="mt-auto">
+                    <a href="{% url 'turnout_analytics' %}" class="btn btn-warning w-100 text-white">
+                        <i class="bi bi-eye me-2"></i>View Analytics
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="voterFilterModal" tabindex="-1" aria-labelledby="voterFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="voterFilterModalLabel">Voter Registry Options</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'view_voter_registry' %}" method="GET">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Filter by Department</label>
+                        <select name="department" class="form-select">
+                            <option value="">All Departments (Recommended)</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept }}">{{ dept }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text mt-2">
+                            Select a specific department or leave it as "All" to see every registered voter.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-link text-muted" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                        <i class="bi bi-check-circle me-1"></i> Confirm & View
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

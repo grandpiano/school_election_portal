@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Voter Registry & Participation{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card card-udes p-3 bg-white text-center">
+            <small class="text-muted d-block">Grand Total (All)</small>
+            <h2 class="fw-bold">{{ total_count }}</h2>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-udes p-3 bg-white text-center border-start border-success border-4">
+            <small class="text-muted d-block">Votes Cast</small>
+            <h2 class="fw-bold text-success">{{ voted_count }}</h2>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-udes p-3 bg-white text-center">
+            <small class="text-muted d-block">Remaining</small>
+            <h2 class="fw-bold text-primary">{{ remaining_count }}</h2>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4 g-3">
+    <div class="col-md-8">
+        <div class="card card-udes p-3 bg-white border-0 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0">Bulk Import via CSV</h6>
+                <a href="#" class="text-decoration-none small text-primary" onclick="alert('Template: student_id, name, department')">Download Template</a>
+            </div>
+            <form method="post" enctype="multipart/form-data" class="row g-2">
+                {% csrf_token %}
+                <div class="col-sm-8">
+                    <input type="file" name="csv_file" class="form-control form-control-sm" accept=".csv" required>
+                </div>
+                <div class="col-sm-4">
+                    <button type="submit" name="action" value="bulk_import" class="btn btn-primary-udes text-white btn-sm w-100">Upload Student List</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card card-udes p-3 bg-white h-100 d-flex flex-column justify-content-center align-items-center text-center">
+            <button class="btn btn-outline-primary btn-sm px-4" data-bs-toggle="modal" data-bs-target="#singleEntryModal">
+                + Add Single Voter
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="card card-udes p-4 shadow-sm border-0">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-4">
+            <h5 class="mb-0 fw-bold text-dark">Voter Database</h5>
+            <small class="text-muted">Currently showing {{ voters.count }} results</small>
+        </div>
+        <div class="col-md-8">
+            <form method="GET" class="row g-2">
+                <div class="col-md-7">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" name="q" class="form-control border-start-0" placeholder="Search by name or ID..." value="{{ current_query }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select name="dept" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">All Departments</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept }}" {% if current_dept == dept %}selected{% endif %}>{{ dept }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-1 text-end">
+                    <a href="{% url 'voter_registry' %}" class="btn btn-light btn-sm shadow-sm" title="Clear Filters">↺</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Student ID</th>
+                    <th>Full Name</th>
+                    <th>Department</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for voter in voters %}
+                <tr>
+                    <td><code class="text-primary fw-bold">{{ voter.student_id }}</code></td>
+                    <td class="fw-semibold">{{ voter.name }}</td>
+                    <td><span class="text-muted small">{{ voter.department }}</span></td>
+                    <td>
+                        {% if voter.has_voted %}
+                        <span class="badge rounded-pill bg-success-subtle text-success border border-success px-3">
+                            Voted
+                        </span>
+                        {% else %}
+                        <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning px-3">
+                            Pending
+                        </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center py-5 text-muted">
+                        <div class="mb-2">No students matching your search.</div>
+                        <a href="{% url 'voter_registry' %}" class="btn btn-sm btn-link text-decoration-none">View All Students</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="singleEntryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 card-udes">
+            <div class="modal-header border-bottom-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold">Register Single Voter</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-body px-4 pb-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Student ID</label>
+                        <input type="text" name="student_id" class="form-control" placeholder="e.g. AUWA-2026-001" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Full Name</label>
+                        <input type="text" name="full_name" class="form-control" placeholder="First and Last Name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Department</label>
+                        <select name="department" class="form-select" required>
+                            <option value="" selected disabled>Select Department</option>
+                            <option value="Computer Science">Computer Science</option>
+                            <option value="Business">Business</option>
+                            <option value="Nursing">Nursing</option>
+                            <option value="Theology">Theology</option>
+                            <option value="Education">Education</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" name="action" value="single_entry" class="btn btn-primary-udes text-white px-4">Register Voter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

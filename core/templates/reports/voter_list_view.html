@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Voter Registry Preview{% endblock %}
+
+{% block content %}
+<div class="container my-4 d-print-block">
+    <div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+        <a href="{% url 'report_center' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Reports
+        </a>
+        <button onclick="window.print()" class="btn btn-dark">
+            <i class="bi bi-printer me-2"></i> Print Official Registry
+        </button>
+    </div>
+
+    <div class="printable-document bg-white">
+        <div class="text-center mb-3">
+            <h2 class="fw-bold m-0">AUWA UNIVERSITY</h2>
+            <h5 class="text-uppercase tracking-widest mt-1">Official Voter Registry - 2026</h5>
+            <div class="d-flex justify-content-center gap-3 mt-2">
+                <span class="badge border text-dark">
+                    {% if selected_dept %}Dept: {{ selected_dept }}{% else %}Full University Registry{% endif %}
+                </span>
+                <span class="badge border text-dark">Total Voters: {{ voters|length }}</span>
+            </div>
+            <hr class="my-3">
+        </div>
+
+        <table class="table table-sm table-bordered border-dark align-middle">
+            <thead class="table-light text-center">
+                <tr>
+                    <th style="width: 20%;">Student ID</th>
+                    <th style="width: 35%;">Voter Name</th>
+                    <th style="width: 30%;">Department</th>
+                    <th style="width: 15%;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in voters %}
+                <tr>
+                    <td class="font-monospace px-2">{{ v.student_id }}</td>
+                    <td class="fw-bold px-2">{{ v.name }}</td>
+                    <td class="px-2 small">{{ v.department }}</td>
+                    <td class="text-center small">
+                        {% if v.has_voted %}
+                            <span class="text-success">VOTED</span>
+                        {% else %}
+                            <span class="text-muted text-uppercase" style="font-size: 0.7rem;">[ &nbsp;&nbsp;&nbsp; ] NOT VOTED</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="mt-4 d-flex justify-content-between align-items-end">
+            <div class="text-start">
+                <div style="border-top: 1px solid #000; width: 200px; margin-bottom: 5px;"></div>
+                <p class="small m-0">Commissioner Signature</p>
+            </div>
+            <div class="text-end">
+                <p class="small text-muted mb-0">UDES Secure Registry System</p>
+                <p class="small text-muted">Generated: {% now "jS F Y H:i" %}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 1. Reset for Web View */
+    .printable-document {
+        padding: 40px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+    }
+
+    /* 2. Print-Specific Logic */
+    @media print {
+        /* Remove browser headers/footers and set tight margins */
+        @page {
+            margin: 0.5cm; /* Controls the physical edge of the paper */
+            size: auto;
+        }
+
+        body {
+            background-color: #fff !important;
+            font-size: 10pt; /* Smaller font for long lists */
+        }
+
+        /* Hide everything irrelevant */
+        .sidebar, .navbar, .navbar-udes, nav, .d-print-none, .messages-container, .btn {
+            display: none !important;
+        }
+
+        main {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+
+        .container {
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .printable-document {
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* Table Optimization */
+        .table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+        }
+        
+        .table td, .table th {
+            padding: 4px 8px !important; /* Tight spacing for more rows */
+            border: 1px solid #000 !important; /* High contrast for printing */
+        }
+
+        /* Prevent table rows from splitting across pages awkwardly */
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+
+        thead {
+            display: table-header-group; /* Repeats header on every page */
+        }
+    }
+</style>
+{% endblock %}
