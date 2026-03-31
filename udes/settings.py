@@ -87,6 +87,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -170,10 +171,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-# Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
-
-# 1. ADD THIS LINE: This is where Django will "collect" files for production
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # 2. Tell Django where to find your development static files
@@ -183,11 +181,9 @@ STATICFILES_DIRS = [
 
 import os
 
-# The URL used to access the media through the browser
 MEDIA_URL = '/media/'
-
-# The actual directory on your computer where files are saved
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Authentication Redirects
 # udes/settings.py
 LOGIN_URL = 'login'
@@ -200,3 +196,4 @@ USE_I18N = True
 USE_TZ = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
