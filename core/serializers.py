@@ -1,13 +1,14 @@
 from rest_framework import serializers
-from .models import Voter, Candidate, Position
+from .models import Voter, Candidate, Position, VotingToken
 
 class CandidateSerializer(serializers.ModelSerializer):
-    # This maps 'manifesto' from models to 'bio' for the JavaScript template
+    # Maps 'manifesto' to 'bio' for the JS template
     bio = serializers.CharField(source='manifesto', read_only=True)
     
     class Meta:
         model = Candidate
-        fields = ['id', 'name', 'photo', 'bio']
+        # CRITICAL: 'photo_url' must be in this list
+        fields = ['id', 'name', 'photo_url', 'bio']
 
 class PositionSerializer(serializers.ModelSerializer):
     candidates = CandidateSerializer(many=True, read_only=True)
@@ -21,11 +22,7 @@ class VoterSerializer(serializers.ModelSerializer):
         model = Voter
         fields = ['id', 'student_id', 'name', 'department', 'has_voted']
 
-from rest_framework import serializers
-from .models import Voter, Candidate, Position, VotingToken
-
 class TokenValidationSerializer(serializers.Serializer):
-    # Ensure this matches exactly what the frontend JS sends
     token = serializers.CharField(max_length=6, min_length=6)
 
 class VoteSubmissionSerializer(serializers.Serializer):

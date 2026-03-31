@@ -25,7 +25,7 @@
     }
 
     .candidate-img {
-        height: 220px; /* Slightly taller for better visibility */
+        height: 220px; 
         width: 100%;
         object-fit: cover;
         background-color: #f1f5f9;
@@ -149,13 +149,13 @@
         pos.candidates.forEach(cand => {
             const isSelected = selections[pos.id] === cand.id;
             
-            // LOGIC: Check both possible field names just in case
-            const finalPhoto = cand.photo_url || cand.photo || 'https://via.placeholder.com/400x300?text=No+Photo';
+            // LOGIC: Use photo_url (External Link) if it exists, otherwise use a placeholder
+            const finalPhoto = cand.photo_url ? cand.photo_url : `https://ui-avatars.com/api/?name=${encodeURIComponent(cand.name)}&background=random&size=256`;
 
             html += `
                 <div class="col-md-6 col-lg-4">
                     <div class="card ballot-card h-100 ${isSelected ? 'selected' : ''}" onclick="selectCandidate(${pos.id}, ${cand.id})">
-                        <img src="${finalPhoto}" class="candidate-img" alt="${cand.name}">
+                        <img src="${finalPhoto}" class="candidate-img" alt="${cand.name}" onerror="this.src='https://via.placeholder.com/400x300?text=Image+Error'">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
