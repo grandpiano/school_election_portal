@@ -107,6 +107,7 @@ class GenerateTokenView(views.APIView):
         except Exception as e:
             return Response({"error": f"Internal Server Error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+# Update 1: Change this inside your ValidateTokenView
 class ValidateTokenView(views.APIView):
     def post(self, request):
         serializer = TokenValidationSerializer(data=request.data)
@@ -125,16 +126,36 @@ class ValidateTokenView(views.APIView):
                 return Response({"error": "This token has expired or has already been used to vote."}, status=403)
 
             positions = Position.objects.all().order_by('order')
-            ballot_serializer = PositionSerializer(positions, many=True)
+            
+            # CUSTOM FIX: Manually build the ballot data to include the external photo URL
+            ballot_data = []
+            for pos in positions:
+                cand_list = []
+                for cand in pos.candidates.all():
+                    # If 'photo' field contains a URL (like ImgBB), use it. 
+                    # Otherwise, try to get the local file URL.
+                    photo_url = str(cand.photo) if cand.photo else 'https://via.placeholder.com/400x300?text=No+Photo'
+                    
+                    cand_list.append({
+                        'id': cand.id,
+                        'name': cand.name,
+                        'photo_url': photo_url 
+                    })
+                
+                ballot_data.append({
+                    'id': pos.id,
+                    'title': pos.title,
+                    'candidates': cand_list
+                })
             
             return Response({
                 "valid": True, 
                 "student_name": vt.voter.name,
-                "ballot": ballot_serializer.data
+                "ballot": ballot_data
             }, status=200)
 
         except VotingToken.DoesNotExist:
-            return Response({"error": "Token not found. Please check the code and try again."}, status=404)
+            return Response({"error": "Token not found."}, status=404)
         except Exception as e:
             return Response({"error": f"Server Error: {str(e)}"}, status=500)
         
@@ -335,7 +356,6 @@ def system_logs(request):
     logs = AuditLog.objects.all().order_by('-timestamp')[:100]
     return render(request, 'system_logs.html', {'logs': logs})
 
-
 def election_results(request):
     if is_kiosk(request.user): return redirect('kiosk_entry')
     config = ElectionConfig.load()
@@ -351,11 +371,15 @@ def election_results(request):
         for cand in pos.candidates.all():
             vote_count = Vote.objects.filter(candidate=cand).count()
             perc = (vote_count / total_pos_votes * 100) if total_pos_votes > 0 else 0
+            
+            # CUSTOM FIX: Get the external URL string directly from the field
+            photo_url = str(cand.photo) if cand.photo else None
+            
             cand_list.append({
                 'name': cand.name,
                 'votes': vote_count,
                 'percentage': round(perc, 1),
-                'photo': cand.photo.url if hasattr(cand, 'photo') and cand.photo else None
+                'photo': photo_url
             })
         cand_list = sorted(cand_list, key=lambda x: x['votes'], reverse=True)
         results_data.append({
