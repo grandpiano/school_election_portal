@@ -29,6 +29,7 @@
         object-fit: cover;
         border-top-left-radius: 18px;
         border-top-right-radius: 18px;
+        background-color: #f1f5f9; /* Background color while loading */
     }
 
     .vote-check {
@@ -95,7 +96,6 @@
     let ballotData = [];
     let selections = {}; 
 
-    // Load ballot data from API
     async function loadBallot() {
         const token = sessionStorage.getItem('active_token');
         if(!token) { 
@@ -149,10 +149,13 @@
 
         pos.candidates.forEach(cand => {
             const isSelected = selections[pos.id] === cand.id;
+            // TECH PRO FIX: We use photo_url here. If it's missing, we use a placeholder image.
+            const photoPath = cand.photo_url ? cand.photo_url : 'https://via.placeholder.com/400x300?text=No+Photo';
+
             html += `
                 <div class="col-md-6 col-lg-4">
                     <div class="card ballot-card h-100 ${isSelected ? 'selected' : ''}" onclick="selectCandidate(${pos.id}, ${cand.id})">
-                        <img src="${cand.photo || '/static/images/no-photo.jpg'}" class="candidate-img">
+                        <img src="${photoPath}" class="candidate-img">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
@@ -171,7 +174,6 @@
         html += `</div>`;
         container.innerHTML = html;
 
-        // Button Updates
         document.getElementById('prevBtn').disabled = currentStep === 0;
         document.getElementById('nextBtn').innerHTML = currentStep === ballotData.length - 1 
             ? 'Review & Cast Ballot <i class="bi bi-shield-check ms-2"></i>' 

@@ -17,7 +17,13 @@ class Position(models.Model):
 class Candidate(models.Model):
     name = models.CharField(max_length=200)
     position = models.ForeignKey(Position, on_delete=models.CASCADE, related_name='candidates')
-    photo = models.ImageField(upload_to='candidates/')
+    # CHANGED: Switched from ImageField to URLField for persistent free hosting
+    photo_url = models.URLField(
+        max_length=500, 
+        blank=True, 
+        null=True, 
+        help_text="Upload to ImgBB and paste the 'Direct Link' here"
+    )
     manifesto = models.TextField(blank=True)
     def __str__(self): return f"{self.name} ({self.position.title})"
 
@@ -28,12 +34,6 @@ class Voter(models.Model):
     has_voted = models.BooleanField(default=False)
     def __str__(self): return f"{self.student_id} - {self.name}"
 
-from django.db import models
-from django.utils import timezone
-from datetime import timedelta
-
-# ... (Positions, Candidates, Voters stay the same)
-
 class VotingToken(models.Model):
     token = models.CharField(max_length=6, unique=True)
     voter = models.OneToOneField('Voter', on_delete=models.CASCADE)
@@ -42,14 +42,11 @@ class VotingToken(models.Model):
     used = models.BooleanField(default=False)
 
     def is_valid(self):
-        # Added a 30-second grace period for server lag
         now = timezone.now()
         return not self.used and now <= (self.expires_at + timedelta(seconds=30))
 
     def __str__(self):
         return f"Token {self.token} for {self.voter.name}"
-
-
 
 class Vote(models.Model):
     candidate = models.ForeignKey(Candidate, on_delete=models.PROTECT)
@@ -74,20 +71,19 @@ class ElectionConfig(models.Model):
         verbose_name_plural = "Election Configuration"
 
     def save(self, *args, **kwargs):
-        self.pk = 1  # Force Singleton
+        self.pk = 1  
         super(ElectionConfig, self).save(*args, **kwargs)
 
     @classmethod
     def load(cls):
         obj, created = cls.objects.get_or_create(pk=1, defaults={
-            'start_time': timezone.now() - timedelta(hours=1), # Default to started
+            'start_time': timezone.now() - timedelta(hours=1),
             'end_time': timezone.now() + timedelta(hours=8)
         })
         return obj
 
     def is_open(self):
         now = timezone.now()
-        # If dates aren't set, we assume closed for safety
         if not self.start_time or not self.end_time:
             return False
         return self.start_time <= now <= self.end_time
