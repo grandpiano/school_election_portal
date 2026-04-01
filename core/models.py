@@ -10,13 +10,6 @@ class Position(models.Model):
 class Candidate(models.Model):
     name = models.CharField(max_length=200)
     position = models.ForeignKey(Position, on_delete=models.CASCADE, related_name='candidates')
-    # Use this for ImgBB or other external links
-    photo_url = models.URLField(
-        max_length=500, 
-        blank=True, 
-        null=True, 
-        help_text="Paste the Direct Link (e.g. from ImgBB) here"
-    )
     manifesto = models.TextField(blank=True)
     def __str__(self): return f"{self.name} ({self.position.title})"
 
