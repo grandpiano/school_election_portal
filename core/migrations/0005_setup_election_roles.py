@@ -44,7 +44,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(create_election_roles),
+        # We add a second argument: migrations.RunPython.noop 
+# This tells Django: "If you need to go backwards, just do nothing."
+        # Change the existing line to add the reverse_code part
+migrations.RunPython(create_election_roles, reverse_code=migrations.RunPython.noop),
     ]
 
     
