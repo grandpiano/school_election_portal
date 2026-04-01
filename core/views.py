@@ -49,6 +49,19 @@ def election_open_required(view_func):
 # API VIEWS
 # ==========================================
 
+class ElectionStatsView(views.APIView):
+    """Provides real-time stats for the dashboard graphs"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        total_voters = Voter.objects.count()
+        voted_count = Voter.objects.filter(has_voted=True).count()
+        return Response({
+            "total_voters": total_voters,
+            "voted_count": voted_count,
+            "turnout_percentage": (voted_count / total_voters * 100) if total_voters > 0 else 0
+        })
+
 class GenerateTokenView(views.APIView):
     permission_classes = [IsAuthenticated, IsAdminRegistrar, IsNotKiosk]
     
