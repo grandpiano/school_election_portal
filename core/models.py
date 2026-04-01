@@ -2,13 +2,6 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta
 
-class UserRoles:
-    COMMISSIONER_HEAD = 'Commissioner Head'
-    ADMIN_REGISTRAR = 'Admin Registrar'
-    STUDENT_DIRECTOR = 'Student Director'
-    OBSERVER = 'Observer'
-    ALL_ROLES = [COMMISSIONER_HEAD, ADMIN_REGISTRAR, STUDENT_DIRECTOR, OBSERVER]
-
 class Position(models.Model):
     title = models.CharField(max_length=100, unique=True)
     order = models.IntegerField(default=0)
@@ -17,12 +10,12 @@ class Position(models.Model):
 class Candidate(models.Model):
     name = models.CharField(max_length=200)
     position = models.ForeignKey(Position, on_delete=models.CASCADE, related_name='candidates')
-    # CHANGED: Switched from ImageField to URLField for persistent free hosting
+    # Use this for ImgBB or other external links
     photo_url = models.URLField(
         max_length=500, 
         blank=True, 
         null=True, 
-        help_text="Upload to ImgBB and paste the 'Direct Link' here"
+        help_text="Paste the Direct Link (e.g. from ImgBB) here"
     )
     manifesto = models.TextField(blank=True)
     def __str__(self): return f"{self.name} ({self.position.title})"
@@ -42,11 +35,7 @@ class VotingToken(models.Model):
     used = models.BooleanField(default=False)
 
     def is_valid(self):
-        now = timezone.now()
-        return not self.used and now <= (self.expires_at + timedelta(seconds=30))
-
-    def __str__(self):
-        return f"Token {self.token} for {self.voter.name}"
+        return not self.used and timezone.now() <= (self.expires_at + timedelta(seconds=30))
 
 class Vote(models.Model):
     candidate = models.ForeignKey(Candidate, on_delete=models.PROTECT)
@@ -84,6 +73,4 @@ class ElectionConfig(models.Model):
 
     def is_open(self):
         now = timezone.now()
-        if not self.start_time or not self.end_time:
-            return False
         return self.start_time <= now <= self.end_time

@@ -1,13 +1,11 @@
 from rest_framework import serializers
-from .models import Voter, Candidate, Position, VotingToken
+from .models import Voter, Candidate, Position
 
 class CandidateSerializer(serializers.ModelSerializer):
-    # Maps 'manifesto' to 'bio' for the JS template
     bio = serializers.CharField(source='manifesto', read_only=True)
     
     class Meta:
         model = Candidate
-        # CRITICAL: 'photo_url' must be in this list
         fields = ['id', 'name', 'photo_url', 'bio']
 
 class PositionSerializer(serializers.ModelSerializer):
