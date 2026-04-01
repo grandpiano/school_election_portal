@@ -29,6 +29,7 @@
         width: 100%;
         object-fit: cover;
         background-color: #f1f5f9;
+        border-bottom: 1px solid #eee;
     }
 
     .vote-check {
@@ -149,13 +150,14 @@
         pos.candidates.forEach(cand => {
             const isSelected = selections[pos.id] === cand.id;
             
-            // LOGIC: Use photo_url (External Link) if it exists, otherwise use a placeholder
-            const finalPhoto = cand.photo_url ? cand.photo_url : `https://ui-avatars.com/api/?name=${encodeURIComponent(cand.name)}&background=random&size=256`;
+            // PRIORITY: Use photo_url string from DB. 
+            // FALLBACK: If null, generate an avatar with candidate's initials.
+            const finalPhoto = cand.photo_url ? cand.photo_url : `https://ui-avatars.com/api/?name=${encodeURIComponent(cand.name)}&background=random&size=256&color=fff`;
 
             html += `
                 <div class="col-md-6 col-lg-4">
                     <div class="card ballot-card h-100 ${isSelected ? 'selected' : ''}" onclick="selectCandidate(${pos.id}, ${cand.id})">
-                        <img src="${finalPhoto}" class="candidate-img" alt="${cand.name}" onerror="this.src='https://via.placeholder.com/400x300?text=Image+Error'">
+                        <img src="${finalPhoto}" class="candidate-img" alt="${cand.name}" onerror="this.src='https://placehold.co/400x300?text=Photo+Unavailable'">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
@@ -229,12 +231,13 @@
                 window.location.href = "{% url 'vote_success' %}"; 
             } else {
                 const result = await response.json();
-                alert("ERROR: " + (result.error || "Submission failed."));
+                alert("VOTING ERROR: " + (result.error || "Submission failed."));
                 window.location.href = "{% url 'kiosk_entry' %}";
             }
         } catch (error) {
             alert("Critical Network Error. Please contact the Admin.");
             nextBtn.disabled = false;
+            nextBtn.innerHTML = `Review & Cast Ballot <i class="bi bi-shield-check ms-2"></i>`;
         }
     }
 
